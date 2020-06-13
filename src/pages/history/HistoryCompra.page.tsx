@@ -1,56 +1,46 @@
 import moment from 'moment'
-// import 'moment/locale/es'
-import {
-  IonContent,
-  IonHeader,
-  IonPage
-} from '@ionic/react'
+import 'moment/locale/es'
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonText } from '@ionic/react'
 import React from 'react'
 import { useHistory, Redirect } from 'react-router-dom'
 import axios from 'axios'
 import SubheaderLista from '../../components/GenericList/SubList.component'
+import { Grid } from '@material-ui/core'
 import { createStyles, Theme, makeStyles } from '@material-ui/core/styles'
 import AppBarComponent from '../../components/AppBar/AppBar'
-import { Grid } from '@material-ui/core'
-
-// DatePicker
-import {
-  DatePicker,
-  // TimePicker,
-  // DateTimePicker
-} from '@material-ui/pickers';
-
 import { useSessionState } from '../../hooks/Session/useSessionState'
 
-import { IDateFilter, IElement, IVenta, ISubheader } from '../types'
+import { ICompra, ISubheader, IElement, IDateFilter } from '../types'
+import { DatePicker } from '@material-ui/pickers'
+
 
 const host = process.env.REACT_APP_HOST
+const port = process.env.REACT_APP_PORT
 const apiKey = process.env.REACT_APP_API_KEY
 
-const useStyles = makeStyles((a: Theme) =>
-  createStyles({
-    root: {
-      flexGrow: 1,
-      width: '100%',
-      '& > * + *': { marginTop: a.spacing(2) },
-    },
-  })
-)
+const useStyles = makeStyles((a: Theme) => createStyles({
+  root: {
+    flexGrow: 1, width: '100%', '& > * + *': { marginTop: a.spacing(2), }
+  }
+}))
 
 const Home: React.FC = (props: any) => {
+  const classes = useStyles()
+  const history = useHistory()
   const [estado, setEstado] = React.useState({ loading: true })
+  const [filterCompras, setFilterCompras] = React.useState<ISubheader[]>()
+
   const [dateFilter, setDateFilter] = React.useState<IDateFilter>({
     startDate: moment().startOf('month'),
     endDate: moment().endOf('month')
   })
-  const [filterVentas, setFilterVentas] = React.useState<ISubheader[]>()
   const session = useSessionState()
 
   React.useEffect(() => {
     const fetchProductos = async () => {
       try {
-        console.log('fetching', dateFilter)
-        const response = await axios.get(`${host}/api/sales`, {
+        console.log('fetching')
+        const response = await axios.get(`${host}/api/purchases`,  {
           headers: {
             'API-KEY': apiKey,
             'AUTH-TOKEN': session.sessionState.token,
@@ -61,33 +51,24 @@ const Home: React.FC = (props: any) => {
           }
         })
         console.log(response.data)
-        const json = (
-          await response.data.map(
-            (item: any): IVenta => ({
-              _id: item._id || item.id,
-              items: item.items.map((e: any) => e._id),
-              dateTime: item.dateTime,
-              clientName: item.clientName,
-            })
-          )
-        ).sort(
-          (a: IVenta, b: IVenta) =>
-            Number(new Date(b.dateTime)) - Number(new Date(a.dateTime))
-        )
+        const json = (await response.data.map((item: any): ICompra => ({
+          _id: item._id || item.id,
+          items: item.items.map((e: any) => e._id),
+          dateTime: item.dateTime,
+          sellerName: item.sellerName
+        }))).sort((a: ICompra, b: ICompra) => Number(new Date(b.dateTime)) - Number(new Date(a.dateTime)))
 
         const subheaders: ISubheader[] = []
         if (json.length) {
-          json.forEach((sale: IVenta) => {
-            const month = moment.utc(sale.dateTime).get('month')
-            const month_name = moment.utc(sale.dateTime).format('MMMM')
-            const dateTime = moment(sale.dateTime).format('dddd D, HH:mm (Z)')
+          json.forEach((purchase: ICompra) => {
+            const month = moment.utc(purchase.dateTime).get('month')
+            const month_name = moment.utc(purchase.dateTime).format('MMMM')
+            const dateTime = moment(purchase.dateTime).format('dddd D, HH:mm (Z)')
             const elem: IElement = {
-              title: `${sale.clientName} · ${sale.items?.length} producto${
-                sale.items?.length > 1 ? 's' : ''
-                }`,
+              title: `${purchase.sellerName} · ${purchase.items?.length} producto${purchase.items?.length > 1 ? 's' : ''}`,
               subTitle: dateTime,
               iconId: 2,
-              id: sale._id,
+              id: purchase._id
             }
             if (!subheaders[month]) {
               subheaders[month] = { title: month_name, items: [], id: month }
@@ -95,10 +76,11 @@ const Home: React.FC = (props: any) => {
             subheaders[month]?.items?.push(elem)
           })
         }
-        setFilterVentas(subheaders)
+
+        setFilterCompras(subheaders)
         setEstado({ loading: false })
       } catch (error) {
-        console.log('error', error)
+        console.log("error", error)
         setEstado({ loading: false })
       }
     }
@@ -109,10 +91,7 @@ const Home: React.FC = (props: any) => {
     return <Redirect to="/signin" />
   }
 
-  const handleItemClick = (
-    event: React.MouseEvent<HTMLDivElement, MouseEvent>,
-    index: string | number
-  ) => {
+  const handleItemClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>, index: string | number) => {
     console.log(index)
   }
 
@@ -126,14 +105,14 @@ const Home: React.FC = (props: any) => {
       setDateFilter({ ...dateFilter, endDate: date })
   }
 
-
   return estado.loading ? <p>loading</p> : (
     <IonPage>
       <IonHeader>
-        <AppBarComponent title="Historial de ventas" goBack={true} />
+        <AppBarComponent title='Historial de compras' goBack={true} />
       </IonHeader>
       <IonContent>
-        <Grid container direction="row" spacing={1} justify="space-evenly" style={{ marginTop: 10 }}>
+
+      <Grid container direction="row" spacing={1} justify="space-evenly" style={{ marginTop: 10 }}>
           <Grid item>
             <DatePicker
               value={dateFilter.startDate}
@@ -153,9 +132,9 @@ const Home: React.FC = (props: any) => {
               style={{ width: 110 }} />
           </Grid>
         </Grid>
-        {!filterVentas?.length ? <p></p> : (
+        {!filterCompras?.length ? <p></p> : (
           <SubheaderLista
-            items={filterVentas}
+            items={filterCompras}
             onItemClick={handleItemClick}
             button={true}
           />

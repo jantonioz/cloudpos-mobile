@@ -2,7 +2,7 @@ import moment from 'moment'
 import 'moment/locale/es'
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonText } from '@ionic/react'
 import React from 'react'
-import { useHistory } from 'react-router-dom'
+import { useHistory, Redirect } from 'react-router-dom'
 import axios from 'axios'
 import MenuLista from '../../components/GenericList/GenericList.component'
 import SubheaderLista from '../../components/GenericList/SubList.component'
@@ -13,6 +13,7 @@ import Toolbar from '@material-ui/core/Toolbar'
 import IconButton from '@material-ui/core/IconButton'
 import BackArrow from '@material-ui/icons/ArrowBack'
 import AppBarComponent from '../../components/AppBar/AppBar'
+import { useSessionState } from '../../hooks/Session/useSessionState'
 
 interface ISubheader {
   title: string | null,
@@ -42,9 +43,9 @@ interface IProducto {
 }
 
 
-
-const host = "192.168.0.23"
-const port = "4000"
+const host = process.env.REACT_APP_HOST
+const port = process.env.REACT_APP_PORT
+const apiKey = process.env.REACT_APP_API_KEY
 
 const useStyles = makeStyles((a: Theme) => createStyles({
   root: {
@@ -60,11 +61,13 @@ const Home: React.FC = (props: any) => {
   const [isLoading, setLoading] = React.useState(true)
   const [filterVentas, setFilterVentas] = React.useState<ISubheader[]>()
 
+  const session = useSessionState()
+
   React.useEffect(() => {
     const fetchProductos = async () => {
       try {
         console.log('fetching')
-        const response = await axios.get(`http://${host}:${port}/api/productos`)
+        const response = await axios.get(`${host}/api/productos`, { headers: { "API-KEY": apiKey, "AUTH-TOKEN": session.sessionState.token } })
         const json = await response.data
         console.log(json)
 
@@ -97,6 +100,10 @@ const Home: React.FC = (props: any) => {
     }
     fetchProductos()
   }, [])
+
+  if (!session.sessionState.token.length) {
+    return <Redirect to="/signin" />
+  }
 
   const handleItemClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>, index: string | number) => {
     console.log(index)

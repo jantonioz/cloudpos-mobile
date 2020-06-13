@@ -21,7 +21,7 @@ import {
 const useStyles = makeStyles(theme => ({
   root: {
     width: '100%',
-    backgroundColor: theme.palette.background.paper
+    // backgroundColor: theme.palette.background.paper
   }
 }))
 
@@ -38,10 +38,13 @@ export default function SelectedListItem(props: any) {
     // props.history.push('/venta')
     setSelectedIndex(index)
   }
+  // background-color: #8EC5FC;
+  // background-image: linear-gradient(62deg, #8EC5FC 0%, #E0C3FC 100%);
+
 
   return (
     <div className={classes.root}>
-      <List component="nav" style={{ backgroundColor: '#fff' }}>
+      <List component="nav" >
 
         <ListItem
           button
@@ -49,8 +52,8 @@ export default function SelectedListItem(props: any) {
           onClick={event => history.push('/ventas')}
         >
           <ListItemAvatar >
-            <Avatar style={{ backgroundColor: 'lightgrey' }}>
-              <ShoppingCartIcon style={{ color: '#000' }} />
+            <Avatar style={{ backgroundColor: '#00000000' }}>
+              <ShoppingCartIcon style={{ color: '#1565c0' }} />
             </Avatar>
           </ListItemAvatar>
           <ListItemText primary="Registrar venta" secondary="Agregue su ultima venta realizada" />
@@ -61,11 +64,11 @@ export default function SelectedListItem(props: any) {
         <ListItem
           button
           // selected={selectedIndex === 1}
-          onClick={event => handleListItemClick(event, 1)}
+          onClick={event => history.push('/compras')}
         >
           <ListItemAvatar >
-            <Avatar style={{ backgroundColor: 'lightgrey' }}>
-              <PurchaseCarIcon style={{ color: '#000' }} />
+            <Avatar style={{ backgroundColor: '#00000000' }}>
+              <PurchaseCarIcon style={{ color: '#1565c0' }} />
             </Avatar>
           </ListItemAvatar>
           <ListItemText primary="Compra" secondary="Agrege compras que le realizó a proveedores" />
@@ -79,8 +82,8 @@ export default function SelectedListItem(props: any) {
           onClick={event => history.push('/inventory')}
         >
           <ListItemAvatar>
-            <Avatar style={{ backgroundColor: 'lightgrey' }}>
-              <InventoryIcon style={{ color: '#000' }} />
+            <Avatar style={{ backgroundColor: '#00000000' }}>
+              <InventoryIcon style={{ color: '#1565c0' }} />
             </Avatar>
           </ListItemAvatar>
           <ListItemText primary="Inventario" secondary="Monitoree el inventario" />
@@ -94,8 +97,8 @@ export default function SelectedListItem(props: any) {
           onClick={event => handleListItemClick(event, 3)}
         >
           <ListItemAvatar>
-            <Avatar style={{ backgroundColor: 'lightgrey' }}>
-              <Chart1Icon style={{ color: '#000' }} />
+            <Avatar style={{ backgroundColor: '#00000000' }}>
+              <Chart1Icon style={{ color: '#1565c0' }} />
             </Avatar>
           </ListItemAvatar>
           <ListItemText primary="Rendimiento" secondary="Reporte de rendimiento" />
@@ -107,13 +110,30 @@ export default function SelectedListItem(props: any) {
           button
           // selected={selectedIndex === 1}
           onClick={event => history.push('/historiales/ventas')}
+
         >
           <ListItemAvatar>
-            <Avatar style={{ backgroundColor: 'lightgrey' }}>
-              <HistoryIcon style={{ color: '#000' }} />
+            <Avatar style={{ background: '#00000000' }}>
+              <HistoryIcon style={{ color: '#1565c0' }} />
             </Avatar>
           </ListItemAvatar>
           <ListItemText primary="Historico - Ventas" secondary="Historial de ventas" />
+        </ListItem>
+
+        <Divider />
+
+        <ListItem
+          button
+          // selected={selectedIndex === 1}
+          onClick={event => history.push('/historiales/compras')}
+
+        >
+          <ListItemAvatar>
+            <Avatar style={{ background: '#00000000' }}>
+              <HistoryIcon style={{ color: '#1565c0' }} />
+            </Avatar>
+          </ListItemAvatar>
+          <ListItemText primary="Historico - Compras" secondary="Historial de compras" />
         </ListItem>
       </List>
     </div>

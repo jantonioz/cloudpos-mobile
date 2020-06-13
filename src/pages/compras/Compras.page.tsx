@@ -1,21 +1,19 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar } from '@ionic/react'
+import { IonContent, IonHeader, IonPage } from '@ionic/react'
 import React from 'react'
 import axios from 'axios'
 import { createStyles, fade, Theme, makeStyles } from '@material-ui/core/styles'
 import AddIcon from '@material-ui/icons/Add'
 import Fab from '@material-ui/core/Fab'
-import { useHistory, Redirect } from 'react-router-dom'
+import { Redirect } from 'react-router-dom'
 import Snackbar from '@material-ui/core/Snackbar'
 import MuiAlert, { AlertProps } from '@material-ui/lab/Alert'
 import SendIcon from '@material-ui/icons/SendOutlined'
 import ListComponent from '../../components/List/List.component'
 import AppBarComponent from '../../components/AppBar/AppBar'
+import { useSessionState } from '../../hooks/Session/useSessionState'
 
 import { ModalAddProducto } from '../../components/ModalAddProducto'
 import { ModalPersona } from '../../components/ModalPersona'
-
-// Hooks
-import { useSessionState } from '../../hooks/Session/useSessionState'
 
 // Types
 import { IModal, IModalPersona, ISnackbar, IProducto } from '../types'
@@ -27,14 +25,13 @@ const useStyles = makeStyles((a: Theme) => createStyles({
 
 const host = process.env.REACT_APP_HOST
 const apiKey = process.env.REACT_APP_API_KEY
+// const URL = '192.168.0.23:4000/api/productos'
 
 
-const VentasPage: React.FC = (props) => {
+const ComprasPage: React.FC = (props) => {
   const classes = useStyles()
-  const history = useHistory()
-
   const session = useSessionState()
-
+  const { sessionState } = useSessionState()
   // current venta list
   const [items, setItems] = React.useState<IProducto[] | null>(null)
   // selected item -- maybe not nesseary
@@ -45,16 +42,14 @@ const VentasPage: React.FC = (props) => {
   const [isLoading, setLoading] = React.useState(true)
   // modal state
   const [modal, setModal] = React.useState<IModal>({
-    open: false, searchText: "", quantity: 1, textFocused: false, visibleList: false, searchItems: null, itemSelected: false,
-    editing: false
+    open: false, searchText: "", quantity: 1, textFocused: false, visibleList: false, searchItems: null, itemSelected: false
   })
 
-  const [modalCliente, setModalCliente] = React.useState<IModalPersona>({ open: false, name: "" })
 
+  const [modalSeller, setModalSeller] = React.useState<IModalPersona>({ open: false, name: "" })
   const [snackbarState, setSnackbarState] = React.useState<ISnackbar>(
     { open: false, type: "success", text: '' }
   )
-
 
   const closeAlert = () => {
     setSnackbarState({ ...snackbarState, open: false })
@@ -67,16 +62,18 @@ const VentasPage: React.FC = (props) => {
     const fetchProductos = async () => {
       try {
         console.log('fetching')
-        const response = await axios.get(`${host}/api/productos`, { headers: { "API-KEY": apiKey, "AUTH-TOKEN": session.sessionState.token } })
+        const response = await axios.get(`${host}/api/productos`, { headers: { "API-KEY": apiKey, "AUTH-TOKEN": sessionState.token } })
         const json = await response.data
-        const response_data: IProducto[] = json.map((item: IProducto) => ({
-          nombre: item.nombre,
-          detalle: `${item.precio} · ${item.categoria}`,
-          _id: item._id,
-          cantidad: item.cantidad,
-          precio: item.precio,
-          categoria: item.categoria
-        }))
+        const response_data: IProducto[] = json.map((item: IProducto) =>
+          ({
+            nombre: item.nombre,
+            detalle: `${item.precio} · ${item.categoria}`,
+            _id: item._id,
+            cantidad: item.cantidad,
+            precio: item.precio,
+            categoria: item.categoria
+          })
+        )
         console.log(response_data)
         setProductos(response_data)
         setModal({ ...modal, searchItems: response_data })
@@ -87,43 +84,31 @@ const VentasPage: React.FC = (props) => {
       }
     }
     fetchProductos()
-  }, [snackbarState, session.sessionState])
-
+  }, [snackbarState, sessionState])
 
   if (!session.sessionState.token.length) {
     return <Redirect to="/signin" />
   }
 
-
   const handleClickOpen = () => {
-    if (productos)
-      setModal({ ...modal, searchItems: productos || null, open: true })
-    else {
-      // re fetch productos
-      setSnackbarState({ ...snackbarState })
-    }
+    setModal({ ...modal, open: true })
   }
 
   const handleOpenModalClient = () => {
-    setModalCliente({ ...modalCliente, open: true })
+    setModalSeller({ ...modalSeller, open: true })
   }
 
   const handleSend = async (e: any) => {
-    setModalCliente({ ...modalCliente, open: false })
-    try {
-      const response = await axios.post(`${host}/api/sales`, { items, clientName: modalCliente.name }, { headers: { "API-KEY": apiKey, "AUTH-TOKEN": session.sessionState.token } })
+    setModalSeller({ ...modalSeller, open: false })
+    const response = await axios.post(`${host}/api/purchases`, { items, sellerName: modalSeller.name }, { headers: { "API-KEY": apiKey, "AUTH-TOKEN": session.sessionState.token } })
+    console.log(response.data)
+    setSnackbarState({ open: true, type: 'success', text: 'Guardado con éxito' })
+    setItems(null)
 
-      console.log(response.data)
-      setSnackbarState({ open: true, type: 'success', text: 'Compra guardada con éxito' })
-      setItems(null)
-    } catch (error) {
-      console.log(error)
-      setSnackbarState({ open: true, type: 'error', text: error.message })
-    }
   }
 
   const handleModalClienteCancel = () => {
-    setModalCliente({ ...modalCliente, open: false })
+    setModalSeller({ ...modalSeller, open: false })
   }
 
   const handleEdit = (item: IProducto) => {
@@ -147,17 +132,12 @@ const VentasPage: React.FC = (props) => {
   return isLoading ? <p>loading</p> : (
     <IonPage>
       <IonHeader>
-        <AppBarComponent goBack={true} title="Venta" key="venta-key" />
+        <AppBarComponent goBack={true} title="Compra" key="compra-key" />
       </IonHeader>
       <IonContent>
-        <IonHeader collapse="condense">
-          <IonToolbar>
-            <IonTitle size="large">Menu Principal</IonTitle>
-          </IonToolbar>
-        </IonHeader>
         <ListComponent
           items={items}
-          emptyText={"Agrega cosas al carrito"}
+          emptyText={"Agrega cosas"}
           onEdit={handleEdit}
           onDelete={handleDelete} />
         <Fab disabled={!(items && items.length)} className={classes.fabSend} color='secondary' variant='extended' onClick={handleOpenModalClient}>
@@ -175,11 +155,13 @@ const VentasPage: React.FC = (props) => {
           productos={productos || null}
           setSnackbarState={setSnackbarState}
           productoAdding={productoAdding}
-          setproductoAdding={setproductoAdding} />
+          setproductoAdding={setproductoAdding} 
+          maxCant={30}
+          purchasing={true} />
 
         <ModalPersona
-          modal={modalCliente}
-          setModal={setModalCliente}
+          modal={modalSeller}
+          setModal={setModalSeller}
           handleAccept={handleSend}
           handleCancel={handleModalClienteCancel} />
         <Snackbar open={snackbarState?.open || false} autoHideDuration={6000} onClose={closeAlert} className={classes.snackbar}>
@@ -192,4 +174,4 @@ const VentasPage: React.FC = (props) => {
   )
 }
 
-export default VentasPage
+export default ComprasPage
